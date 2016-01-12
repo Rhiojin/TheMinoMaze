@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 //even location in the array can be removed to create doors, traps etc. odd numbers must always persist to avoid locked out locations
 
 public class makemaze : MonoBehaviour {
@@ -19,6 +19,8 @@ public class makemaze : MonoBehaviour {
 	float xpos;
 	float xpos2;
 	float ypos2;
+
+	List<Vector3> pathway = new List<Vector3>();
 	
 	void Start() {
 		//yield return new WaitForSeconds(1);
@@ -68,8 +70,12 @@ public class makemaze : MonoBehaviour {
 				else{
 					//save to array to add key later - but the keey should usually come before the door?, maybe?
 
+					Vector3 point = new Vector3(j*cubesize,0, i*cubesize);
+					pathway.Add(point);
 				}
-				// just to show colored blocks every second block
+
+
+				//this if block isnt working as intended but w/e for now
 				if(i >= thirdWayW*2 && i < thirdWayW*3 && j >= thirdWayH*2 && j < thirdWayH*3)
 				{
 					if(i%2 != 0)
@@ -79,6 +85,7 @@ public class makemaze : MonoBehaviour {
 					}
 				}
 				t=!t;
+				// just to show colored blocks every second block these are the maze building blocks
 				if (t==true && (i==0 || i==2 || i==4 ||i==6 || i==8 || i==10 || i==12)){
 					    ptype.GetComponent<Renderer>().material.color = Color.red;
 				}
