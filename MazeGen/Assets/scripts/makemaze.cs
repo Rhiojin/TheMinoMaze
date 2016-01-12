@@ -38,11 +38,22 @@ public class makemaze : MonoBehaviour {
 		//mazearray[0] = mod.Substring(0, index) + '0' + mod.Substring(index + 1);
 		
 		RemoveBlocks(mazearray);
-		
+
+		int thirdWayW = Mathf.RoundToInt(width/3);
+		int thirdWayH = Mathf.RoundToInt(height/3);
 		
 		for (int i = 0; i <width; i++)  {
 			//print ("array " + i + " = " + mazearray[i]);
-			for (int j = 0; j <height; j++)  {
+			for (int j = 0; j <height; j++)  
+			{
+//				if(i > thirdWayW && i < thirdWayW*2 && j > thirdWayH && j < thirdWayH*2)
+//				{
+//					if(i%2 != 0)
+//					{
+//						//make hazard or door or something
+//
+//					}
+//				}
 				var st=mazearray[i];
 				//print ("mazei= " + i + mazearray[i] );
 				//print ("substring= " + st.Substring(0,1) );
@@ -54,10 +65,22 @@ public class makemaze : MonoBehaviour {
 					if (brick != null)  { ptype.GetComponent<Renderer>().material = brick; }
 					ptype.transform.parent = transform;
 				}
+				else{
+					//save to array to add key later - but the keey should usually come before the door?, maybe?
+
+				}
 				// just to show colored blocks every second block
+				if(i >= thirdWayW*2 && i < thirdWayW*3 && j >= thirdWayH*2 && j < thirdWayH*3)
+				{
+					if(i%2 != 0)
+					{
+						//make hazard or door or something
+						ptype.GetComponent<Renderer>().material.color = Color.green;
+					}
+				}
 				t=!t;
 				if (t==true && (i==0 || i==2 || i==4 ||i==6 || i==8 || i==10 || i==12)){
-					//    ptype.GetComponent.<Renderer>().material.color = Color.red;
+					    ptype.GetComponent<Renderer>().material.color = Color.red;
 				}
 
 			}
