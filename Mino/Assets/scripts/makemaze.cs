@@ -5,8 +5,12 @@ using System.Collections.Generic;
 
 public class makemaze : MonoBehaviour {
 	// makemaze.js  - MichShire Feb2015
-	
+	[Header("Prefabs")]
 	public GameObject mazecube;
+	public GameObject cell;
+	public GameObject door;
+	public GameObject[] miscItems;
+	[Header("Stats")]
 	public float cubesize=3;
 	public Material brick;
 	private string MazeString = "";
@@ -96,8 +100,44 @@ public class makemaze : MonoBehaviour {
 		//return;
 		managerScript.GetSpawnPoint(xpos);
 		managerScript.GetExitPoint(xpos2, ypos2);
+		AddPathway ();
 	}
-	
+
+	void MiscItem(Transform point){
+		GameObject miscTemp;
+		int r = Random.Range (0, 100);
+		int rItem = Random.Range (0, miscItems.Length);
+		if (r < 20) {
+			miscTemp = (GameObject)Instantiate(miscItems[rItem], point.position, point.rotation);
+			miscTemp = null;
+		}
+	}
+
+	void AddPathway(){
+		GameObject cellTemp;
+
+		for(int i = 0; i< pathway.Count; i++){
+			if(i == 0 || i == pathway.Count-1){
+				Debug.Log("HIT");
+				cellTemp = (GameObject)Instantiate(door, new Vector3(pathway[i].x, 1.5f, pathway[i].z), Quaternion.identity);
+				cellTemp.transform.rotation = new Quaternion(0,-180,0,0);
+				cellTemp.name = "Exit";
+				if(i ==0){
+					//start
+					cellTemp.name = "Entrance";
+					cellTemp.transform.rotation = new Quaternion(0,0,0,0);
+					cellTemp.GetComponent<doorBox>().Entrance();
+				}
+			}
+			else{
+				cellTemp = (GameObject)Instantiate(cell, new Vector3(pathway[i].x, 1.5f, pathway[i].z), Quaternion.identity);
+				cellTemp.name = "Cell("+i.ToString()+")";
+				MiscItem(cellTemp.transform);
+			}
+			cellTemp=null;
+		}
+	}
+
 	// ====================
 	void RemoveBlocks(string[] mazearray) {
 		string mod; int index; 
@@ -115,8 +155,6 @@ public class makemaze : MonoBehaviour {
 		xpos2 = index*cubesize;
 		ypos2 = (height-1)*cubesize;
 		mazearray[height-1] = mod.Substring(0, index) + '0' + mod.Substring(index + 1);
-
-
 	}
 
 	int GetOddNumber()

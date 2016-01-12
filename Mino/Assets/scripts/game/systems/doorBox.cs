@@ -25,6 +25,10 @@ public class doorBox : MonoBehaviour {
 	void OpenDoor(){
 		door.material = openDoor;
 	}
+
+	public void Entrance(){
+		Destroy (this);
+	}
 	
 	// Use listener that uses the BaseEventData passed to the Trigger
 	private void AddEventTrigger(UnityAction<BaseEventData> action, EventTriggerType triggerType)
