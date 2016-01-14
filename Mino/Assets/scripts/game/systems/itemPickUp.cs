@@ -3,18 +3,17 @@ using System.Collections;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
-public class moveBox : MonoBehaviour {
-
+public class itemPickUp : MonoBehaviour {
+	
 	PC_Main PC;
 	EventTrigger eventTrigger = null;
-
+	
 	// Use this for initialization
 	void Start () {
 		PC = GameObject.Find ("PC").GetComponent<PC_Main> ();
 		eventTrigger = GetComponent<EventTrigger>();
 		AddEventTrigger(OnPointerClick, EventTriggerType.PointerClick);
 	}
-	
 	// Use listener that uses the BaseEventData passed to the Trigger
 	private void AddEventTrigger(UnityAction<BaseEventData> action, EventTriggerType triggerType)
 	{
@@ -28,11 +27,10 @@ public class moveBox : MonoBehaviour {
 		// Add the EventTrigger.Entry to delegates list on the EventTrigger
 		eventTrigger.triggers.Add(entry);
 	}
-
 	
 	private void OnPointerClick(BaseEventData data){
-		Debug.Log ("Movement click");
-			PC.Move (transform.position);
-			return;
+		Debug.Log (gameObject.name + " PickUp");
+		PC.PickUp (gameObject);
+		return;
 	}
 }

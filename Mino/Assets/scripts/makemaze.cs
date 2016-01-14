@@ -9,6 +9,7 @@ public class makemaze : MonoBehaviour {
 	public GameObject mazecube;
 	public GameObject cell;
 	public GameObject door;
+	public GameObject key;
 	public GameObject[] miscItems;
 	[Header("Stats")]
 	public float cubesize=3;
@@ -101,6 +102,16 @@ public class makemaze : MonoBehaviour {
 		managerScript.GetSpawnPoint(xpos);
 		managerScript.GetExitPoint(xpos2, ypos2);
 		AddPathway ();
+		PlaceKey ();
+	}
+
+	void PlaceKey(){
+		int r = Random.Range (0, pathway.Count - 4);
+		GameObject keyTemp;
+
+		keyTemp = (GameObject)Instantiate (key, pathway [r], Quaternion.identity);
+		keyTemp.transform.position = new Vector3 (keyTemp.transform.position.x, 1f, keyTemp.transform.position.z);
+		keyTemp = null;
 	}
 
 	void MiscItem(Transform point){

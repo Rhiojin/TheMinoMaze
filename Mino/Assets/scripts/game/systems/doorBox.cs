@@ -24,6 +24,12 @@ public class doorBox : MonoBehaviour {
 
 	void OpenDoor(){
 		door.material = openDoor;
+		Invoke ("LevelUp", 1f);
+	}
+
+	void LevelUp(){
+		PC.Move2Door (transform.position);
+		Application.LoadLevel(0);
 	}
 
 	public void Entrance(){
@@ -45,9 +51,8 @@ public class doorBox : MonoBehaviour {
 	}
 	
 	private void OnPointerClick(BaseEventData data){
-		if (PC.hasMainKey) {
+		if (PC.hasMainKey && PC.ap > 0) {
 			OpenDoor ();
-			PC.Move2Door (transform.position);
 			return;
 		}
 	}

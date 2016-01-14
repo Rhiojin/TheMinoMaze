@@ -28,7 +28,7 @@ public class Manager : MonoBehaviour {
 	public void GetSpawnPoint(float xpos)
 	{
 		spawnPoint.x = xpos;
-		spawnPoint.y = 1.3f;
+		spawnPoint.y = 1.5f;
 		PC.transform.position = spawnPoint;
 	}
 
