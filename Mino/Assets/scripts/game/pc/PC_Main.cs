@@ -3,12 +3,21 @@ using System.Collections;
 using UnityEngine.UI;
 
 public class PC_Main : MonoBehaviour {
-	public bool hasMainKey;
-	public Image keyImg;
+
+	[Header("AP")]
 	public Text apText;
 	public int ap;
 	public int apMax;
-	public Button endTurnButton;
+
+	[Header("Inv")]
+	private int InvID;
+	private int InvMax;
+
+	[Header("Key")]
+	public bool hasMainKey;
+	public Image keyImg;
+
+	//audio 
 	AudioSource Audio;
 
 
@@ -32,13 +41,13 @@ public class PC_Main : MonoBehaviour {
 			transform.position = pos;
 			Step ();
 			ap--;
-			UpdateText();
+			UpdateAPText();
 		}
 	}
 
 	public void Move2Door(Vector3 pos){
 			ap--;
-			UpdateText();
+			UpdateAPText();
 			transform.position = pos;
 			Step ();
 	}
@@ -47,7 +56,7 @@ public class PC_Main : MonoBehaviour {
 		if(ap > 0){
 			if(obj.CompareTag("Key")){ CollectKey();}
 			ap--;
-			UpdateText();
+			UpdateAPText();
 			obj.SetActive(false);
 		}
 	}
@@ -77,11 +86,36 @@ public class PC_Main : MonoBehaviour {
 
 	public void NewTurn(){
 		ap = apMax;
-		UpdateText ();
+		UpdateAPText ();
 	}
 	
-	void UpdateText(){
+	void UpdateAPText(){
 		apText.text = "AP: " + ap.ToString ();
+	}
+
+	// INV -----------------------------------------------------------------------
+	public void NextInv(){
+		InvID++;
+		if (InvID > InvMax) {
+			InvID = 0;
+		}
+		UpdateInv ();
+	}
+
+	public void PrevInv(){
+		InvID--;
+		if (InvID < 0) {
+			InvID = InvMax;
+		}
+		UpdateInv ();
+	}
+
+	void UpdateInv(){
+		if (InvID == 0) {
+			// nothing 
+			// change UI PIC
+			// change hand to have nothing
+		}
 	}
 
 }
