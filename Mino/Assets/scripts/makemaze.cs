@@ -71,6 +71,7 @@ public class makemaze : MonoBehaviour {
 					
 					if (brick != null)  { ptype.GetComponent<Renderer>().material = brick; }
 					ptype.transform.parent = transform;
+					ptype.tag = "Wall";
 				}
 				else{
 					//save to array to add key later - but the keey should usually come before the door?, maybe?

@@ -20,9 +20,15 @@ public class PC_Main : MonoBehaviour {
 	//audio 
 	AudioSource Audio;
 
+	[Header("Minotaur")]
+	public float conspicuous = 0;
+	public float slidingScale = 50;
+
+	public Manager managerScript;
 
 	void Start(){
 		///need to have a fade in black out
+
 		Invoke ("Go", 1f);
 	}
 
@@ -66,12 +72,14 @@ public class PC_Main : MonoBehaviour {
 		//GM END TURN - MONSTERS TURN
 		// animation and shit
 		NewTurn ();
+		MinotaurSpawnChance();
 	}
 
 
 	void Puddle(){
 		//small nearby alert
 		// puddle noise
+		conspicuous += 3;
 	}
 
 	void Step(){
@@ -87,6 +95,7 @@ public class PC_Main : MonoBehaviour {
 	public void NewTurn(){
 		ap = apMax;
 		UpdateAPText ();
+
 	}
 	
 	void UpdateAPText(){
@@ -117,5 +126,19 @@ public class PC_Main : MonoBehaviour {
 			// change hand to have nothing
 		}
 	}
+
+	void MinotaurSpawnChance()
+	{
+		print("Have Fun!");
+		float chance = conspicuous * 5;
+		chance = Random.Range(0+chance, 100);
+		if(chance >= slidingScale)
+		{
+			
+			//managerScript.SpawnMinotaur(transform.position);
+		}
+	}
+
+
 
 }
