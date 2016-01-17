@@ -24,6 +24,7 @@ public class Manager : MonoBehaviour {
 	Vector3[] allDirections = new Vector3[4];
 	int firstRayDirectionIndex = 0;
 	int secondRayDirectionIndex = 0;
+	bool spawnPointFound = false;
 
 	void Start ()
 	{
@@ -69,55 +70,83 @@ public class Manager : MonoBehaviour {
 		secondRayDirectionIndex = 0;
 
 		rayDirection = Vector3.forward;
+		spawnPointFound = false;
 
-		StartCoroutine( CalculateSpawnPos(startCell,Vector3.forward) );
+		//StartCoroutine( CalculateSpawnPos(startCell) );
+		CalculateSpawnPos(startCell);
 
 	}
 
-	IEnumerator CalculateSpawnPos(Vector3 position,Vector3 rayDirection)
+	void CalculateSpawnPos(Vector3 position)
 	{
 		// may need to keep track of directions checked
 		
 		//while ray has not hit a wall or calculation has not taken too long
-		while(wallHit == false || rayTimeout < 2)
+		while(wallHit == false || rayTimeout < 2 || spawnPointFound == false)
 		{
-			if(Physics.Raycast(position, rayDirection, out m_hit,1*cellSize))
+			rayDirection = allDirections[firstRayDirectionIndex]* -1 ; // need to be opposite
+
+			if(Physics.Raycast(position, allDirections[firstRayDirectionIndex], out m_hit,1*cellSize))
 			{
+				Debug.DrawLine(position,m_hit.point, Color.cyan,2);
 				if(m_hit.collider.CompareTag("Cell"))
 				{
+					print("found a cell");
 					//block counting to gauge distance travelled
 					blockCount++;
 					//while loop continues from new point
 					position = m_hit.transform.position;
+					currentCell = m_hit.transform.position;
+
+					GameObject ptype;
+					ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+					ptype.transform.position = minoSpawnPoint;
 				}
 				else if(m_hit.collider.CompareTag("Wall"))
 				{
+					print("found a wall");
 					wallHit = true;
 					//if block count is > 1 continue search
-					if(blockCount > 1)
+					if(blockCount >= 1)
 					{
+						print("continuing");
 						wallHit = false;
 						rayTimeout = 0;
 						blockCount = 0;
+						secondRayDirectionIndex = 0;
 
 
 						while(wallHit == false || rayTimeout < 2)
 						{
-							if(Physics.Raycast(allDirections[secondRayDirectionIndex], rayDirection, out m_hit,1*cellSize))
+							//avoid doubling back
+							if(rayDirection == allDirections[secondRayDirectionIndex]) secondRayDirectionIndex++;
+
+							if(Physics.Raycast(currentCell, allDirections[secondRayDirectionIndex], out m_hit,1*cellSize))
 							{
+								Debug.DrawLine(position,m_hit.point, Color.cyan,2);
 								if(m_hit.collider.CompareTag("Cell"))
 								{
 									blockCount++;
+									print("found a cell, 2nd level");
+									currentCell = m_hit.transform.position;
 								}
 								else if(m_hit.collider.CompareTag("Wall"))
 								{
+									print("found a wall, 2nd level");
 									wallHit = true;
 									if(blockCount >= 1)
 									{
+										print("and ending");
+										rayTimeout = 3;
+										minoSpawnPoint = currentCell;
+										spawnPointFound = true;
+										break;
 									}
 									else
 									{
 										//let loop run again with new direction
+										print("wall too close, changing direction, 2nd level");
+										wallHit = false;
 										secondRayDirectionIndex++;
 										if(secondRayDirectionIndex >= allDirections.Length)
 										{
@@ -125,8 +154,14 @@ public class Manager : MonoBehaviour {
 										}
 									}
 								}
+								else{
+									print("incorrect collision");
+									wallHit = true;
+									//rayTimeout = 3;
+									break;
+								}
 							}
-							yield return null;
+							//yield return null;
 							rayTimeout += Time.deltaTime;
 						}
 
@@ -134,21 +169,44 @@ public class Manager : MonoBehaviour {
 					//otherwise start from origin in a new direction
 					else
 					{
+						print("but not continuing, changing direction on first ray");
 						//Recursive
+						firstRayDirectionIndex++;
+						if(firstRayDirectionIndex >= allDirections.Length)
+						{
+							break;
+							rayTimeout = 3;
+						}
 					}
 
 				}
-				//otherwise start from origin in a new direction
-				else
-				{
-					//Recursive
+				else{
+					print("incorrect collision");
+					rayTimeout = 3; 
+					wallHit = true;
+					break;
 				}
+
 			}
-			yield return null;
+			else{
+				print("ray didnt find anything");
+			}
+			//yield return null;
 			rayTimeout += Time.deltaTime;
 		}
 
-
+		if(spawnPointFound)
+		{
+			print("awww yiss");
+			GameObject ptype;
+			ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
+			ptype.transform.position = minoSpawnPoint;
+			ptype.name = ("YO MOOOMMMAAAA");
+		}
+		else
+		{
+			print("crap!");
+		}
 
 	}
 

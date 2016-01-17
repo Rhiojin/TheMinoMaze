@@ -25,12 +25,23 @@ public class PC_Main : MonoBehaviour {
 	public float slidingScale = 50;
 
 	public Manager managerScript;
+	int quick = 0;
 
 	void Start(){
 		///need to have a fade in black out
 
 		Invoke ("Go", 1f);
 	}
+
+	void Update()
+	{
+		if(Input.GetKeyDown(KeyCode.M))
+		{
+			print("attempting crazy code");
+			managerScript.SpawnMinotaur(transform.position);
+		}
+	}
+
 
 	void Go(){
 		transform.Translate (Vector3.forward * 1);
@@ -129,14 +140,15 @@ public class PC_Main : MonoBehaviour {
 
 	void MinotaurSpawnChance()
 	{
-		print("Have Fun!");
-		float chance = conspicuous * 5;
-		chance = Random.Range(0+chance, 100);
-		if(chance >= slidingScale)
-		{
-			
-			//managerScript.SpawnMinotaur(transform.position);
-		}
+		//print("Have Fun!");
+//		float chance = conspicuous * 5;
+//		chance = Random.Range(0+chance, 100);
+//		if(chance >= slidingScale)
+//		{
+//			print("attempting crazy code");
+//			//managerScript.SpawnMinotaur(transform.position);
+//		}
+
 	}
 
 

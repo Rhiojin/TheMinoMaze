@@ -130,7 +130,7 @@ public class makemaze : MonoBehaviour {
 
 		for(int i = 0; i< pathway.Count; i++){
 			if(i == 0 || i == pathway.Count-1){
-				Debug.Log("HIT");
+				//Debug.Log("HIT");
 				cellTemp = (GameObject)Instantiate(door, new Vector3(pathway[i].x, 1.5f, pathway[i].z), Quaternion.identity);
 				cellTemp.transform.rotation = new Quaternion(0,-180,0,0);
 				cellTemp.name = "Exit";

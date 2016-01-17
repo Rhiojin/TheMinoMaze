@@ -27,18 +27,23 @@ public class WallsCheck : MonoBehaviour {
 //		}
 		//Vector3 left = transform.TransformDirection(Vector3.left);
 		//Vector3 right = transform.TransformDirection(Vector3.right);
+		Debug.DrawLine(transform.position,transform.position+Vector3.right*2.5f, Color.cyan,2);
 		RaycastHit hit;
 		//left + right
-		if (Physics.Raycast (transform.position, Vector3.right, out hit, 0.5f) && !Physics.Raycast (transform.position, Vector3.left, 0.5f)) {
-			Debug.Log(hit.collider.gameObject.name);
-			if(corridorCount>4){
-				Destroy(gameObject);
-			} else{
-				transform.eulerAngles += new Vector3(0,90,0);
-				print ("!");
-				corridorCount++;
-				Invoke("corridorCheck",1f);
-			}
+		if (Physics.Raycast (transform.position, Vector3.right, out hit, 1.5f) || Physics.Raycast (transform.position, Vector3.left, 1.5f)) {
+			 //do nothing
+//			if(corridorCount>4){
+//				Destroy(gameObject);
+//			} else{
+//				transform.eulerAngles += new Vector3(0,90,0);
+//				print ("!");
+//				corridorCount++;
+//				Invoke("corridorCheck",1f);
+//			}
+		}
+		else
+		{
+			transform.eulerAngles += new Vector3(0,90,0);
 		}
 	}
 
