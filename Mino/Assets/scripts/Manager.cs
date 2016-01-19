@@ -25,6 +25,9 @@ public class Manager : MonoBehaviour {
 	int firstRayDirectionIndex = 0;
 	int secondRayDirectionIndex = 0;
 	bool spawnPointFound = false;
+	bool minoSpawned = false;
+	GameObject theMinotaur;
+	public GameObject minotaurPrefab;
 
 	void Start ()
 	{
@@ -60,7 +63,7 @@ public class Manager : MonoBehaviour {
 		exitCanvas.transform.position = spawnPoint;
 	}
 
-	public void SpawnMinotaur(Vector3 pos)
+	public bool SpawnMinotaur(Vector3 pos)
 	{
 		startCell = pos;
 		currentCell = startCell;
@@ -74,7 +77,8 @@ public class Manager : MonoBehaviour {
 
 		//StartCoroutine( CalculateSpawnPos(startCell) );
 		CalculateSpawnPos(startCell);
-
+		if(spawnPointFound) return true;
+		else return false;
 	}
 
 	void CalculateSpawnPos(Vector3 position)
@@ -175,7 +179,7 @@ public class Manager : MonoBehaviour {
 						if(firstRayDirectionIndex >= allDirections.Length)
 						{
 							break;
-							rayTimeout = 3;
+							//rayTimeout = 3;
 						}
 					}
 
@@ -197,11 +201,20 @@ public class Manager : MonoBehaviour {
 
 		if(spawnPointFound)
 		{
-			print("awww yiss");
-			GameObject ptype;
-			ptype = GameObject.CreatePrimitive(PrimitiveType.Cube);
-			ptype.transform.position = minoSpawnPoint;
-			ptype.name = ("YO MOOOMMMAAAA");
+			if(!minoSpawned)
+			{
+				minoSpawned = true;
+				print("awww yiss");
+
+				theMinotaur = Instantiate(minotaurPrefab, minoSpawnPoint, minotaurPrefab.transform.rotation ) as GameObject;
+				theMinotaur.name = ("RAWRRRRRRRRR");
+			}
+
+			else
+			{
+				print("DO A CHECK FOR DISTANCE FROM PC - REPOSITION IF NECESSARY");
+			}
+
 		}
 		else
 		{

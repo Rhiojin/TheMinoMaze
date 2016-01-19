@@ -27,8 +27,15 @@ public class PC_Main : MonoBehaviour {
 	public Manager managerScript;
 	int quick = 0;
 
+	bool myTurn = false;
+	turnManager turnScript;
+
+
 	void Start(){
 		///need to have a fade in black out
+		/// 
+		turnScript = GameObject.Find("Manager").GetComponent<turnManager>();
+		turnScript.OnPcTurn += NewTurn;
 
 		Invoke ("Go", 1f);
 	}
@@ -77,13 +84,21 @@ public class PC_Main : MonoBehaviour {
 			obj.SetActive(false);
 		}
 	}
+		
+	public void NewTurn(){
+		myTurn = true;
+		ap = apMax;
+		UpdateAPText ();
 
+
+	}
 	// END TURN BUTTON
 	public void EndTurn(){
-		//GM END TURN - MONSTERS TURN
-		// animation and shit
-		NewTurn ();
-		MinotaurSpawnChance();
+		if(myTurn)
+		{
+			myTurn = false;
+			turnScript.PcEndTurn(transform.position);
+		}
 	}
 
 
@@ -103,11 +118,7 @@ public class PC_Main : MonoBehaviour {
 		keyImg.color = Color.white;
 	}
 
-	public void NewTurn(){
-		ap = apMax;
-		UpdateAPText ();
 
-	}
 	
 	void UpdateAPText(){
 		apText.text = "AP: " + ap.ToString ();
@@ -137,20 +148,6 @@ public class PC_Main : MonoBehaviour {
 			// change hand to have nothing
 		}
 	}
-
-	void MinotaurSpawnChance()
-	{
-		//print("Have Fun!");
-//		float chance = conspicuous * 5;
-//		chance = Random.Range(0+chance, 100);
-//		if(chance >= slidingScale)
-//		{
-//			print("attempting crazy code");
-//			//managerScript.SpawnMinotaur(transform.position);
-//		}
-
-	}
-
 
 
 }
