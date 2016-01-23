@@ -6,6 +6,7 @@ public class PC_Main : MonoBehaviour {
 
 	[Header("AP")]
 	public Text apText;
+	public Text webAPtext;
 	public int ap;
 	public int apMax;
 
@@ -27,7 +28,7 @@ public class PC_Main : MonoBehaviour {
 	public Manager managerScript;
 	int quick = 0;
 
-	bool myTurn = false;
+	bool myTurn = true;
 	turnManager turnScript;
 
 
@@ -86,6 +87,7 @@ public class PC_Main : MonoBehaviour {
 	}
 		
 	public void NewTurn(){
+		print("player turn");
 		myTurn = true;
 		ap = apMax;
 		UpdateAPText ();
@@ -122,6 +124,7 @@ public class PC_Main : MonoBehaviour {
 	
 	void UpdateAPText(){
 		apText.text = "AP: " + ap.ToString ();
+		webAPtext.text = apText.text;
 	}
 
 	// INV -----------------------------------------------------------------------

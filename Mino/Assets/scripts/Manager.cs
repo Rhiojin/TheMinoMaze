@@ -123,7 +123,14 @@ public class Manager : MonoBehaviour {
 						while(wallHit == false || rayTimeout < 2)
 						{
 							//avoid doubling back
-							if(rayDirection == allDirections[secondRayDirectionIndex]) secondRayDirectionIndex++;
+							if(rayDirection == allDirections[secondRayDirectionIndex])
+							{
+								secondRayDirectionIndex++;
+								if(secondRayDirectionIndex >= allDirections.Length)
+								{
+									break;
+								}
+							}
 
 							if(Physics.Raycast(currentCell, allDirections[secondRayDirectionIndex], out m_hit,1*cellSize))
 							{
