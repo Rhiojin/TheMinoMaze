@@ -6,7 +6,7 @@ public class PC_Main : MonoBehaviour {
 
 	[Header("AP")]
 	public Text apText;
-	public Text webAPtext;
+	//public Text webAPtext;
 	public int ap;
 	public int apMax;
 
@@ -124,7 +124,7 @@ public class PC_Main : MonoBehaviour {
 	
 	void UpdateAPText(){
 		apText.text = "AP: " + ap.ToString ();
-		webAPtext.text = apText.text;
+		//webAPtext.text = apText.text;
 	}
 
 	// INV -----------------------------------------------------------------------
