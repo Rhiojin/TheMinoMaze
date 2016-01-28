@@ -7,7 +7,7 @@ public class MainMenuControl : MonoBehaviour {
 	public GameObject panelSurvey;
 
 	public void Play(){
-		Application.LoadLevel ("01");
+		Application.LoadLevel (1);
 	}
 
 	public void Clear(){
