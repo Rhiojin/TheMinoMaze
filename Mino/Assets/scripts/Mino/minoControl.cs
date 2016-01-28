@@ -29,6 +29,8 @@ public class minoControl : MonoBehaviour {
 	Vector3 nextPos = Vector3.zero;
 	Vector3[] allDirections = new Vector3[4];
 	int firstRayDirectionIndex = 0;
+	int pcSearchIndex = 0;
+	bool pcFound = false;
 	Vector3 direction = Vector3.zero;
 	RaycastHit m_hit;
 	List<Vector3> possibleNextPos = new List<Vector3>();
@@ -76,6 +78,7 @@ public class minoControl : MonoBehaviour {
 		foundNextPos = false; 
 		searchTimeout = 0;
 		firstRayDirectionIndex = 0;
+		pcSearchIndex = 0;
 
 		AP = maxAp;
 		possibleNextPos.Clear();
@@ -94,11 +97,13 @@ public class minoControl : MonoBehaviour {
 	{
 		if(!foundNextPos && !calculating && minoTurn)
 		{
+			//update local positoning for raycasts
 			allDirections[0] = transform.forward;
 			allDirections[1] = transform.right;
 			allDirections[2] = -transform.forward;
 			allDirections[3] = -transform.right;
 			print("calculating next pos");
+			pcFound = false;
 			CalculateNextPos();
 		}
 		else
@@ -126,7 +131,48 @@ public class minoControl : MonoBehaviour {
 		//firstRayDirectionIndex = Random.Range(0,allDirections.Length);
 		direction = transform.forward;
 
-		while(foundNextPos == false && searchTimeout < 3)
+		//need to first do a search here for pc
+		//CURRENTLY BROKEN
+//		while(pcSearchIndex < allDirections.Length || !pcFound)
+//		{
+//			//search 4 cells out
+//			if(Physics.Raycast(transform.position, allDirections[pcSearchIndex], out m_hit,4*cellSize))
+//			{
+//				Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
+//				if(m_hit.collider.CompareTag("Wall"))
+//				{
+//					print("SEARCH");
+//					pcSearchIndex++;
+//				}
+//				else if(m_hit.collider.CompareTag("Player"))
+//				{
+//					//end search
+//					pcSearchIndex = allDirections.Length;
+//
+//					print("AND DESTROY");
+//					pcFound = true;
+//					if(Physics.Raycast(transform.position, allDirections[pcSearchIndex], out m_hit,1*cellSize))
+//					{
+//						Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
+//						if(m_hit.collider.CompareTag("Cell"))
+//						{
+//							
+//							nextPos = m_hit.transform.position;
+//
+//						}
+//					}
+//				}
+//			}
+//			else
+//			{
+//				//if nothing hit
+//				pcSearchIndex++;
+//			}
+//		}
+
+
+		//if pc not found
+		while(foundNextPos == false && searchTimeout < 3 && !pcFound)
 		{
 			if(Physics.Raycast(transform.position, direction, out m_hit,1*cellSize))
 			{
@@ -137,6 +183,11 @@ public class minoControl : MonoBehaviour {
 //					foundNextPos = true;
 //					nextPos = m_hit.transform.position;
 
+					if(direction == transform.forward)
+					{
+						//stop search to bias towards forward travel
+						firstRayDirectionIndex = allDirections.Length;
+					}
 
 					//Get all possible directions on calculate
 					possibleNextPos.Add(m_hit.transform.position);
@@ -159,6 +210,7 @@ public class minoControl : MonoBehaviour {
 					{
 						print("changing direction");
 						direction = allDirections[firstRayDirectionIndex];
+						//increment after assignment to avoid index errors
 						firstRayDirectionIndex++;
 					}
 
@@ -189,6 +241,7 @@ public class minoControl : MonoBehaviour {
 					else
 					{
 						direction = allDirections[firstRayDirectionIndex];
+						//increment after assignment to avoid index errors
 						firstRayDirectionIndex++;
 					}
 				}
