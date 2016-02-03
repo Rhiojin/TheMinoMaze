@@ -12,7 +12,7 @@ public class moveBox : MonoBehaviour {
 	void Start () {
 		PC = GameObject.Find ("PC").GetComponent<PC_Main> ();
 		eventTrigger = GetComponent<EventTrigger>();
-		AddEventTrigger(OnPointerClick, EventTriggerType.PointerClick);
+		AddEventTrigger(OnPointerClick, EventTriggerType.PointerUp);
 	}
 	
 	// Use listener that uses the BaseEventData passed to the Trigger
@@ -31,7 +31,7 @@ public class moveBox : MonoBehaviour {
 
 	
 	private void OnPointerClick(BaseEventData data){
-		Debug.Log ("Movement click");
+			Debug.Log ("Movement click");
 			PC.Move (transform.position);
 			return;
 	}

@@ -4,6 +4,9 @@ using UnityEngine.UI;
 
 public class PC_Main : MonoBehaviour {
 
+	[Header("UI Holders")]
+	public GameObject inGameUI;
+
 	[Header("AP")]
 	public Text apText;
 	//public Text webAPtext;
@@ -59,10 +62,14 @@ public class PC_Main : MonoBehaviour {
 		if (hit.CompareTag ("Puddle")) {
 			Puddle ();
 		}
+		if(hit.CompareTag("Key")){
+			CollectKey();
+			hit.gameObject.SetActive(false);
+		}
 	}
 	
 	public void Move(Vector3 pos){
-		if (ap > 0) {
+		if (ap > 0 && myTurn) {
 			transform.position = pos;
 			Step ();
 			ap--;
@@ -76,22 +83,14 @@ public class PC_Main : MonoBehaviour {
 			transform.position = pos;
 			Step ();
 	}
-
-	public void PickUp(GameObject obj){
-		if(ap > 0){
-			if(obj.CompareTag("Key")){ CollectKey();}
-			ap--;
-			UpdateAPText();
-			obj.SetActive(false);
-		}
-	}
+				
 		
 	public void NewTurn(){
 		print("player turn");
 		myTurn = true;
 		ap = apMax;
 		UpdateAPText ();
-
+		inGameUI.SetActive (true);
 
 	}
 	// END TURN BUTTON
@@ -100,6 +99,7 @@ public class PC_Main : MonoBehaviour {
 		{
 			myTurn = false;
 			turnScript.PcEndTurn(transform.position);
+			inGameUI.SetActive (false);
 		}
 	}
 
@@ -113,13 +113,7 @@ public class PC_Main : MonoBehaviour {
 	void Step(){
 		//play step noise
 	}
-
-	//key
-	void CollectKey(){
-		hasMainKey = true;
-		keyImg.color = Color.white;
-	}
-
+		
 
 	
 	void UpdateAPText(){
@@ -151,6 +145,15 @@ public class PC_Main : MonoBehaviour {
 			// change hand to have nothing
 		}
 	}
+
+	// specific objs --------------------------------------------------------------
+
+	//key
+	void CollectKey(){
+		hasMainKey = true;
+		keyImg.color = Color.white;
+	}
+
 
 
 }
