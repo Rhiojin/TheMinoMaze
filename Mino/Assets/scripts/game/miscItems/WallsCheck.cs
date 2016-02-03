@@ -22,19 +22,37 @@ public class WallsCheck : MonoBehaviour {
 	// need to check if left is against a wall, if not then rotate
 	// if four times without wall delete
 	// need to check if right is touching a wall, if not delete
-		Debug.DrawLine(transform.position,transform.position+Vector3.right*2.5f, Color.cyan,2);
-		Debug.DrawLine(transform.position,transform.position+Vector3.left*2.5f, Color.cyan,2);
+//		Debug.DrawLine(transform.position,transform.position+Vector3.right*2.5f, Color.cyan,2);
+//		Debug.DrawLine(transform.position,transform.position+Vector3.left*2.5f, Color.cyan,2);
 		RaycastHit hit;
-		//left + right
-		if (Physics.Raycast (transform.position, transform.position+Vector3.right, out hit, 0.1f) && Physics.Raycast (transform.position, transform.position+Vector3.left, out hit, 0.1f) && hit.collider.CompareTag("Wall")) {
-			Debug.Log (hit.collider.name+" I'm cool");
-		}
-		else
+//		//left + right
+//		if (Physics.Raycast (transform.position, transform.position+Vector3.right, out hit, 0.1f) && Physics.Raycast (transform.position, transform.position+Vector3.left, out hit, 0.1f)) {
+//			Debug.Log (hit.collider.name+" I'm cool");
+//		}
+//		else
+//		{
+//			transform.eulerAngles += new Vector3(0,90,0);
+//			checkTimes++;
+//			Invoke("corridorCheck", 1f);
+//			return;
+//		}
+
+		if (Physics.Raycast (transform.position, transform.right, out hit, 1))
 		{
-			transform.eulerAngles += new Vector3(0,90,0);
-			checkTimes++;
-			Invoke("corridorCheck", 1f);
-			return;
+			Debug.DrawLine(transform.position,hit.point, Color.yellow,5);
+			if(hit.collider.CompareTag("Cell"))
+			{
+				transform.eulerAngles += new Vector3(0,90,0);
+							checkTimes++;
+							Invoke("corridorCheck", 0.1f);
+							return;
+			}
+
+			else if(hit.collider.CompareTag("Wall"))
+			{
+				Debug.Log (hit.collider.name+" I'm cool");
+			}
 		}
+
 	}
 }

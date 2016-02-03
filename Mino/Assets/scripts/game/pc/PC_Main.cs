@@ -90,7 +90,7 @@ public class PC_Main : MonoBehaviour {
 		myTurn = true;
 		ap = apMax;
 		UpdateAPText ();
-		inGameUI.SetActive (true);
+		//inGameUI.SetActive (true);
 
 	}
 	// END TURN BUTTON
@@ -99,7 +99,7 @@ public class PC_Main : MonoBehaviour {
 		{
 			myTurn = false;
 			turnScript.PcEndTurn(transform.position);
-			inGameUI.SetActive (false);
+			//inGameUI.SetActive (false);
 		}
 	}
 

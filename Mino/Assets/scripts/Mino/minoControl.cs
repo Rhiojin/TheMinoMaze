@@ -133,7 +133,7 @@ public class minoControl : MonoBehaviour {
 
 		//need to first do a search here for pc
 		//CURRENTLY BROKEN
-//		while(pcSearchIndex < allDirections.Length || !pcFound)
+//		while(pcSearchIndex < allDirections.Length && !pcFound)
 //		{
 //			//search 4 cells out
 //			if(Physics.Raycast(transform.position, allDirections[pcSearchIndex], out m_hit,4*cellSize))
@@ -143,6 +143,7 @@ public class minoControl : MonoBehaviour {
 //				{
 //					print("SEARCH");
 //					pcSearchIndex++;
+//
 //				}
 //				else if(m_hit.collider.CompareTag("Player"))
 //				{
@@ -151,6 +152,7 @@ public class minoControl : MonoBehaviour {
 //
 //					print("AND DESTROY");
 //					pcFound = true;
+//					pcSearchIndex = allDirections.Length;
 //					if(Physics.Raycast(transform.position, allDirections[pcSearchIndex], out m_hit,1*cellSize))
 //					{
 //						Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
@@ -168,7 +170,36 @@ public class minoControl : MonoBehaviour {
 //				//if nothing hit
 //				pcSearchIndex++;
 //			}
+//			yield return null;
 //		}
+
+		foreach(Vector3 dir in allDirections)
+		{
+			print("SEARCH");
+			if(Physics.Raycast(transform.position, dir, out m_hit,4*cellSize,8,QueryTriggerInteraction.Ignore))
+			{
+				Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
+				if(m_hit.collider.CompareTag("Player"))
+				{
+					print("AND DESTROY");
+					pcFound = true;
+					pcSearchIndex = allDirections.Length;
+					if(Physics.Raycast(transform.position, dir, out m_hit,1*cellSize))
+					{
+						Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
+						if(m_hit.collider.CompareTag("Cell"))
+						{
+
+							nextPos = m_hit.transform.position;
+
+						}
+					}
+				}
+			}
+		}
+
+
+
 
 
 		//if pc not found
