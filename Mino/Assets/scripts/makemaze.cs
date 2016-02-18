@@ -11,6 +11,7 @@ public class makemaze : MonoBehaviour {
 	public GameObject door;
 	public GameObject key;
 	public GameObject[] miscItems;
+	public GameObject[] dropItems;
 	[Header("Stats")]
 	public float cubesize=3;
 	public Material brick;
@@ -104,6 +105,7 @@ public class makemaze : MonoBehaviour {
 		managerScript.GetExitPoint(xpos2, ypos2);
 		AddPathway ();
 		PlaceKey ();
+		AddDropItem ();
 	}
 
 	void PlaceKey(){
@@ -147,6 +149,18 @@ public class makemaze : MonoBehaviour {
 				MiscItem(cellTemp.transform);
 			}
 			cellTemp=null;
+		}
+	}
+
+	void AddDropItem(){
+		int chance = Random.Range (0, 10);
+		if (chance > 0) {
+			int r = Random.Range (0, pathway.Count - 4);
+			int rItem = Random.Range (0, dropItems.Length);
+			GameObject itemTemp;
+			itemTemp = (GameObject)Instantiate (dropItems[rItem], pathway [r], Quaternion.identity);
+			itemTemp.transform.position = new Vector3 (itemTemp.transform.position.x, 1f, itemTemp.transform.position.z);
+			itemTemp = null;
 		}
 	}
 

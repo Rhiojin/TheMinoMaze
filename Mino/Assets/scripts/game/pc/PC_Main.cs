@@ -14,8 +14,11 @@ public class PC_Main : MonoBehaviour {
 	public int apMax;
 
 	[Header("Inv")]
-	private int InvID;
-	private int InvMax;
+	public int[] invID;
+	private int invI;
+	// 1 = torch
+	private int torchLife;
+
 
 	[Header("Key")]
 	public bool hasMainKey;
@@ -64,6 +67,10 @@ public class PC_Main : MonoBehaviour {
 		}
 		if(hit.CompareTag("Key")){
 			CollectKey();
+			hit.gameObject.SetActive(false);
+		}
+		if(hit.CompareTag("Item")){
+			CollectItem(hit.gameObject.name);
 			hit.gameObject.SetActive(false);
 		}
 	}
@@ -123,37 +130,73 @@ public class PC_Main : MonoBehaviour {
 
 	// INV -----------------------------------------------------------------------
 	public void NextInv(){
-		InvID++;
-		if (InvID > InvMax) {
-			InvID = 0;
+		invI++;
+		if (invI > invID.Length) {
+			invI = 0;
 		}
 		UpdateInv ();
 	}
 
 	public void PrevInv(){
-		InvID--;
-		if (InvID < 0) {
-			InvID = InvMax;
+		invI--;
+		if (invI < 0) {
+			invI =  invID.Length;
 		}
 		UpdateInv ();
 	}
 
 	void UpdateInv(){
-		if (InvID == 0) {
+		if (invID[invI] == 0) {
 			// nothing 
 			// change UI PIC
 			// change hand to have nothing
 		}
+		if (invID [invI] == 1) {
+			//torch
+			// change UI Pic
+			// change hand to have torch 
+		}
 	}
 
 	// specific objs --------------------------------------------------------------
+
+	void UnEquip(){
+		//blank out hand 
+	}
 
 	//key
 	void CollectKey(){
 		hasMainKey = true;
 		keyImg.color = Color.white;
 	}
+	//items
+	void CollectItem(string name){
+		if (name == "Torch") {
+			CollectTorch ();
+		}
+	}
+	// torch
+	void CollectTorch(){
+		//update ui
 
+		//update ints
+	}
 
+	void EquipTorch(){
+		// place torch in hand
+
+		// mess with light settings
+	}
+
+	void CheckTorch(){
+		torchLife--;
+		if (torchLife == 0) {
+			DestroyTorch ();
+		}
+	}
+
+	void DestroyTorch(){
+
+	}
 
 }

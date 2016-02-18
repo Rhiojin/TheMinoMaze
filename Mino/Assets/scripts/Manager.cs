@@ -8,7 +8,6 @@ public class Manager : MonoBehaviour {
 	public GameObject PC;
 	public GameObject exitCanvas;
 
-	public Text tiltReadout;
 	Vector3 tilt;
 
 	float cellSize;
@@ -31,7 +30,7 @@ public class Manager : MonoBehaviour {
 
 	void Start ()
 	{
-		tiltReadout.text = "";
+
 		cellSize = GameObject.Find("MazeGen").GetComponent<makemaze>().cubesize;
 		allDirections[0] = Vector3.forward;
 		allDirections[1] = Vector3.right;
@@ -39,14 +38,6 @@ public class Manager : MonoBehaviour {
 		allDirections[3] = -Vector3.right;
 	}
 	
-	// Update is called once per frame
-//	void Update () 
-//	{
-//		
-//		tilt = Input.acceleration;
-//		tiltReadout.text = tilt.ToString();
-//
-//	}
 
 	public void GetSpawnPoint(float xpos)
 	{
