@@ -34,6 +34,7 @@ public class minoControl : MonoBehaviour {
 	Vector3 direction = Vector3.zero;
 	RaycastHit m_hit;
 	List<Vector3> possibleNextPos = new List<Vector3>();
+	bool inRangeForAttack = false;
 
 
 	void Start(){
@@ -173,25 +174,42 @@ public class minoControl : MonoBehaviour {
 //			yield return null;
 //		}
 
+
+	
+
+		int m_layermask = 1 << LayerMask.NameToLayer("playerLayer");
 		foreach(Vector3 dir in allDirections)
 		{
 			print("SEARCH");
-			if(Physics.Raycast(transform.position, dir, out m_hit,4*cellSize,8,QueryTriggerInteraction.Ignore))
+			if(Physics.Raycast(transform.position, dir, out m_hit,4*cellSize,m_layermask))
 			{
 				Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
 				if(m_hit.collider.CompareTag("Player"))
 				{
 					print("AND DESTROY");
-					pcFound = true;
+					print(m_hit.distance);
 					pcSearchIndex = allDirections.Length;
-					if(Physics.Raycast(transform.position, dir, out m_hit,1*cellSize))
+				
+					if(m_hit.distance < 2.2f)
 					{
-						Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
-						if(m_hit.collider.CompareTag("Cell"))
+						print("IM IN RANGE FOR DEATH!");
+						pcFound = true;
+						foundNextPos = true;
+						nextPos = transform.position;
+					}	
+					else
+					{
+						if(Physics.Raycast(transform.position, dir, out m_hit,1*cellSize))
 						{
+							Debug.DrawLine(transform.position,m_hit.point, Color.red,5);
+							if(m_hit.collider.CompareTag("Cell"))
+							{
+								//found direct path 
+								pcFound = true;
+								foundNextPos = true;
+								nextPos = m_hit.transform.position;
 
-							nextPos = m_hit.transform.position;
-
+							}
 						}
 					}
 				}
