@@ -14,24 +14,22 @@ public class PC_Main : MonoBehaviour {
 	public int apMax;
 
 	[Header("Inv")]
-	public int[] invID;
-	private int invI;
-	// 1 = torch
-	private int torchLife;
-
+	public PC_Inv invGM;
 
 	[Header("Key")]
 	public bool hasMainKey;
 	public Image keyImg;
 
 	//audio 
-	AudioSource Audio;
+	[Header("Audio")]
+	public AudioSource audioSorc;
+	public AudioClip[] audioClips;
 
 	[Header("Minotaur")]
 	public float conspicuous = 0;
 	public float slidingScale = 50;
 
-	public Manager managerScript;
+	public Manager managerScript; // MANAGER FOR WHAT????
 	int quick = 0;
 
 	bool myTurn = true;
@@ -49,6 +47,7 @@ public class PC_Main : MonoBehaviour {
 
 	void Update()
 	{
+		/// can we delete this??
 		if(Input.GetKeyDown(KeyCode.M))
 		{
 			print("attempting crazy code");
@@ -58,7 +57,7 @@ public class PC_Main : MonoBehaviour {
 
 
 	void Go(){
-		transform.Translate (Vector3.forward * 1);
+		transform.Translate (Vector3.forward * 2f);
 	}
 
 	void OnTriggerEnter(Collider hit){
@@ -96,16 +95,15 @@ public class PC_Main : MonoBehaviour {
 		print("player turn");
 		myTurn = true;
 		ap = apMax;
-		UpdateAPText ();
 		//inGameUI.SetActive (true);
-
+		UpdateAPText ();
 	}
 	// END TURN BUTTON
 	public void EndTurn(){
 		if(myTurn)
 		{
-			myTurn = false;
 			turnScript.PcEndTurn(transform.position);
+			myTurn = false;
 			//inGameUI.SetActive (false);
 		}
 	}
@@ -118,7 +116,9 @@ public class PC_Main : MonoBehaviour {
 	}
 
 	void Step(){
-		//play step noise
+		audioSorc.clip = audioClips [0];
+		audioSorc.Play ();
+		conspicuous += 1;
 	}
 		
 
@@ -127,42 +127,9 @@ public class PC_Main : MonoBehaviour {
 		apText.text = "AP: " + ap.ToString ();
 		//webAPtext.text = apText.text;
 	}
-
-	// INV -----------------------------------------------------------------------
-	public void NextInv(){
-		invI++;
-		if (invI > invID.Length) {
-			invI = 0;
-		}
-		UpdateInv ();
-	}
-
-	public void PrevInv(){
-		invI--;
-		if (invI < 0) {
-			invI =  invID.Length;
-		}
-		UpdateInv ();
-	}
-
-	void UpdateInv(){
-		if (invID[invI] == 0) {
-			// nothing 
-			// change UI PIC
-			// change hand to have nothing
-		}
-		if (invID [invI] == 1) {
-			//torch
-			// change UI Pic
-			// change hand to have torch 
-		}
-	}
+		
 
 	// specific objs --------------------------------------------------------------
-
-	void UnEquip(){
-		//blank out hand 
-	}
 
 	//key
 	void CollectKey(){
@@ -177,26 +144,6 @@ public class PC_Main : MonoBehaviour {
 	}
 	// torch
 	void CollectTorch(){
-		//update ui
-
-		//update ints
+		invGM.PlusItem (1, 10);
 	}
-
-	void EquipTorch(){
-		// place torch in hand
-
-		// mess with light settings
-	}
-
-	void CheckTorch(){
-		torchLife--;
-		if (torchLife == 0) {
-			DestroyTorch ();
-		}
-	}
-
-	void DestroyTorch(){
-
-	}
-
 }
