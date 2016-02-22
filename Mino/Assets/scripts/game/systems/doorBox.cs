@@ -29,7 +29,7 @@ public class doorBox : MonoBehaviour {
 
 	void LevelUp(){
 		PC.Move2Door (transform.position);
-		Application.LoadLevel(0);
+		Application.LoadLevel(1);
 	}
 
 	public void Entrance(){
