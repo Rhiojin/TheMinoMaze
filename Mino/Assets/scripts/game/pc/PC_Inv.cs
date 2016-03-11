@@ -59,16 +59,20 @@ public class PC_Inv : MonoBehaviour {
 	void SetItem(int i){
 		invName.text = items [i].name; 
 		invAmount.text = items [i].amount.ToString();
-		if (items[i].amount == 0) {
-			invAmount.text = "";
-		}
 		invImageHolder.sprite = items [i].img;
-		if (items [i].amount > 0 || i == 0) {
-			ObjInHand (i);
+		UseTorch (false);
+
+		if (items[i].amount == 0 || i == 0) {
+			invAmount.text = "";
+			ObjInHand (0);
 		}
+
+		if (items [i].amount > 0) {
+			ObjInHand (i);
+		} 
 		if (ID == 1) {
 			UseTorch (true);
-			timer = 0;
+			//timer = 0;	
 		}
 	}
 
@@ -93,6 +97,16 @@ public class PC_Inv : MonoBehaviour {
 		usingTorch = are;
 	}
 
+	public void Death(){
+		itemInHand.transform.parent = null;
+		itemInHand.GetComponent<BoxCollider> ().isTrigger = false;
+		itemInHand.GetComponent<Rigidbody> ().useGravity = true;
+		Invoke ("BackToMainMenu", 5f);
+	}
+
+	void BackToMainMenu(){
+		Application.LoadLevel (0);
+	}
 
 	void ObjInHand(int i){
 		foreach (InvItem item in items) {

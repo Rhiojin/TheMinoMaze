@@ -51,7 +51,8 @@ public class doorBox : MonoBehaviour {
 	}
 	
 	private void OnPointerClick(BaseEventData data){
-		if (PC.hasMainKey && PC.ap > 0) {
+		//if (PC.hasMainKey && PC.ap > 0) {
+		if(PC.hasMainKey){
 			OpenDoor ();
 			return;
 		}

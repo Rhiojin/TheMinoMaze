@@ -20,10 +20,6 @@ public class turnManager : MonoBehaviour {
 		turnTracker = CurrentTurn.playerTurn;
 	}
 
-	void FixedUpdate()
-	{
-		
-	}
 
 	// Update is called once per frame
 	public void PcEndTurn (Vector3 pcPos) 

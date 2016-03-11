@@ -71,6 +71,8 @@ public class minoControl : MonoBehaviour {
 
 	}
 
+
+
 	public void NewTurn()
 	{
 		print("mino turn");

@@ -6,19 +6,20 @@ public class PC_Main : MonoBehaviour {
 
 	[Header("UI Holders")]
 	public GameObject inGameUI;
-
+	/*
 	[Header("AP")]
 	public Text apText;
 	//public Text webAPtext;
 	public int ap;
 	public int apMax;
+*/
+	[Header("Stats")]
+	public bool dead;
+	public bool hasMainKey;
 
 	[Header("Inv")]
 	public PC_Inv invGM;
 
-	[Header("Key")]
-	public bool hasMainKey;
-	public Image keyImg;
 
 	//audio 
 	[Header("Audio")]
@@ -39,21 +40,15 @@ public class PC_Main : MonoBehaviour {
 	void Start(){
 		///need to have a fade in black out
 		/// 
+		dead = false;
 		turnScript = GameObject.Find("Manager").GetComponent<turnManager>();
-		turnScript.OnPcTurn += NewTurn;
+		InvokeRepeating ("GiveMino", 2f, Random.Range (2, 6));
+		//turnScript.OnPcTurn += NewTurn;
 
 		Invoke ("Go", 1f);
 	}
 
-	void Update()
-	{
-		/// can we delete this??
-		if(Input.GetKeyDown(KeyCode.M))
-		{
-			print("attempting crazy code");
-			managerScript.SpawnMinotaur(transform.position);
-		}
-	}
+
 
 
 	void Go(){
@@ -61,12 +56,12 @@ public class PC_Main : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider hit){
+		if (hit.CompareTag ("enemy")) {
+			Death (hit.gameObject.transform.position);
+		}
+
 		if (hit.CompareTag ("Puddle")) {
 			Puddle ();
-		}
-		if(hit.CompareTag("Key")){
-			CollectKey();
-			hit.gameObject.SetActive(false);
 		}
 		if(hit.CompareTag("Item")){
 			CollectItem(hit.gameObject.name);
@@ -75,22 +70,25 @@ public class PC_Main : MonoBehaviour {
 	}
 	
 	public void Move(Vector3 pos){
-		if (ap > 0 && myTurn) {
+		//if (ap > 0 && myTurn) {
+		if(!dead){
 			transform.position = pos;
 			Step ();
-			ap--;
-			UpdateAPText();
+		//	ap--;
+		//	UpdateAPText();
 		}
 	}
 
 	public void Move2Door(Vector3 pos){
-			ap--;
-			UpdateAPText();
+		//	ap--;
+		//	UpdateAPText();
+		if (!dead) {
 			transform.position = pos;
 			Step ();
+		}
 	}
 				
-		
+	/*
 	public void NewTurn(){
 		print("player turn");
 		myTurn = true;
@@ -108,6 +106,11 @@ public class PC_Main : MonoBehaviour {
 		}
 	}
 
+*/
+
+	void GiveMino(){
+		turnScript.PcEndTurn(transform.position);
+	}
 
 	void Puddle(){
 		//small nearby alert
@@ -121,29 +124,42 @@ public class PC_Main : MonoBehaviour {
 		conspicuous += 1;
 	}
 		
+	public void Death(Vector3 pos){
+		Debug.Log ("DEATH");
+		dead = true;
+		inGameUI.SetActive (false);
+		GetComponent<Rigidbody> ().useGravity = true;
+		GetComponent<Rigidbody> ().AddForceAtPosition (Vector3.forward, pos);
+		invGM.Death ();
+	}
 
-	
+
+	/*
 	void UpdateAPText(){
 		apText.text = "AP: " + ap.ToString ();
 		//webAPtext.text = apText.text;
 	}
-		
+*/
 
 	// specific objs --------------------------------------------------------------
 
-	//key
-	void CollectKey(){
-		hasMainKey = true;
-		keyImg.color = Color.white;
-	}
+
 	//items
 	void CollectItem(string name){
 		if (name == "Torch") {
 			CollectTorch ();
 		}
+		if (name == "Key") {
+			CollectKey ();
+		}
 	}
-	// torch
+	// torch ID 1
 	void CollectTorch(){
 		invGM.PlusItem (1, 10);
+	}
+	//key ID 2
+	void CollectKey(){
+		hasMainKey = true;
+		invGM.PlusItem (2, 1);
 	}
 }
