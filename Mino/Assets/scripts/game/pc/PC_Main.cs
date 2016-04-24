@@ -4,22 +4,13 @@ using UnityEngine.UI;
 
 public class PC_Main : MonoBehaviour {
 
-	[Header("UI Holders")]
-	public GameObject inGameUI;
-	/*
-	[Header("AP")]
-	public Text apText;
-	//public Text webAPtext;
-	public int ap;
-	public int apMax;
-*/
 	[Header("Stats")]
 	public bool dead;
 	public bool hasMainKey;
 
 	[Header("Inv")]
 	public PC_Inv invGM;
-
+	public Bag bag;
 
 	//audio 
 	[Header("Audio")]
@@ -38,13 +29,9 @@ public class PC_Main : MonoBehaviour {
 
 
 	void Start(){
-		///need to have a fade in black out
-		/// 
 		dead = false;
 		turnScript = GameObject.Find("Manager").GetComponent<turnManager>();
 		InvokeRepeating ("GiveMino", 2f, Random.Range (2, 6));
-		//turnScript.OnPcTurn += NewTurn;
-
 		Invoke ("Go", 1f);
 	}
 
@@ -53,10 +40,11 @@ public class PC_Main : MonoBehaviour {
 
 	void Go(){
 		transform.Translate (Vector3.forward * 2f);
+		bag.close ();
 	}
 
 	void OnTriggerEnter(Collider hit){
-		if (hit.CompareTag ("enemy")) {
+		if (hit.CompareTag ("Enemy")) {
 			Death (hit.gameObject.transform.position);
 		}
 
@@ -70,12 +58,11 @@ public class PC_Main : MonoBehaviour {
 	}
 	
 	public void Move(Vector3 pos){
-		//if (ap > 0 && myTurn) {
+
 		if(!dead){
 			transform.position = pos;
 			Step ();
-		//	ap--;
-		//	UpdateAPText();
+			bag.close ();
 		}
 	}
 
@@ -87,26 +74,6 @@ public class PC_Main : MonoBehaviour {
 			Step ();
 		}
 	}
-				
-	/*
-	public void NewTurn(){
-		print("player turn");
-		myTurn = true;
-		ap = apMax;
-		//inGameUI.SetActive (true);
-		UpdateAPText ();
-	}
-	// END TURN BUTTON
-	public void EndTurn(){
-		if(myTurn)
-		{
-			turnScript.PcEndTurn(transform.position);
-			myTurn = false;
-			//inGameUI.SetActive (false);
-		}
-	}
-
-*/
 
 	void GiveMino(){
 		turnScript.PcEndTurn(transform.position);
@@ -125,24 +92,13 @@ public class PC_Main : MonoBehaviour {
 	}
 		
 	public void Death(Vector3 pos){
-		Debug.Log ("DEATH");
 		dead = true;
-		inGameUI.SetActive (false);
+		bag.dead ();
 		GetComponent<Rigidbody> ().useGravity = true;
 		GetComponent<Rigidbody> ().AddForceAtPosition (Vector3.forward, pos);
 		invGM.Death ();
 	}
-
-
-	/*
-	void UpdateAPText(){
-		apText.text = "AP: " + ap.ToString ();
-		//webAPtext.text = apText.text;
-	}
-*/
-
-	// specific objs --------------------------------------------------------------
-
+		
 
 	//items
 	void CollectItem(string name){

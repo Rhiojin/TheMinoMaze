@@ -16,9 +16,13 @@
 using UnityEngine;
 
 public class CardboardAndroidDevice : BaseCardboardDevice {
+  private const string ActivityListenerClass =
+      "com.google.vr.platform.unity.UnityVrActivityListener";
+
   private static AndroidJavaObject activityListener;
 
   public override void Init() {
+    SetApplicationState();
     base.Init();
     ConnectToActivity();
   }
@@ -26,10 +30,12 @@ public class CardboardAndroidDevice : BaseCardboardDevice {
   protected override void ConnectToActivity() {
     base.ConnectToActivity();
     if (androidActivity != null && activityListener == null) {
-      TextAsset button = Resources.Load<TextAsset>("CardboardSettingsButton.png");
-      activityListener = Create("com.google.vr.platform.unity.UnityVrActivityListener",
-                                button.bytes);
+      activityListener = Create(ActivityListenerClass);
     }
+  }
+
+  public override void SetUILayerEnabled(bool enabled) {
+    CallObjectMethod(activityListener, "setUILayerEnabled", enabled);
   }
 
   public override void SetVRModeEnabled(bool enabled) {
@@ -40,32 +46,31 @@ public class CardboardAndroidDevice : BaseCardboardDevice {
     CallObjectMethod(activityListener, "setSettingsButtonEnabled", enabled);
   }
 
-  public override void SetTapIsTrigger(bool enabled) {
-    CallObjectMethod(activityListener, "setTapIsTrigger", enabled);
+  public override void SetAlignmentMarkerEnabled(bool enabled) {
+    CallObjectMethod(activityListener, "setAlignmentMarkerEnabled", enabled);
   }
 
-  public override void SetTouchCoordinates(int x, int y) {
-    CallObjectMethod(activityListener, "setTouchCoordinates", x, y);
+  public override void SetVRBackButtonEnabled(bool enabled) {
+    CallObjectMethod(activityListener, "setVRBackButtonEnabled", enabled);
   }
 
-  public override bool SetDefaultDeviceProfile(System.Uri uri) {
-    bool result = false;
-    CallObjectMethod(ref result, activityListener, "setDefaultDeviceProfile", uri.ToString());
-    return result;
+  public override void SetShowVrBackButtonOnlyInVR(bool only) {
+    CallObjectMethod(activityListener, "setShowVrBackButtonOnlyInVR", only);
   }
 
   public override void ShowSettingsDialog() {
     CallObjectMethod(activityListener, "launchConfigureActivity");
   }
 
-  protected override void ProcessEvents() {
-    base.ProcessEvents();
-    if (!Cardboard.SDK.TapIsTrigger) {
-      if (triggered) {
-        CallObjectMethod(activityListener, "injectSingleTap");
-      }
-      if (tilted) {
-        CallObjectMethod(activityListener, "injectKeyPress", 111);  // Escape key.
+  public override void OnPause(bool pause) {
+    base.OnPause(pause);
+    CallObjectMethod(activityListener, "onPause", pause);
+  }
+
+  private void SetApplicationState() {
+    if (activityListener == null) {
+      using (var listenerClass = GetClass(ActivityListenerClass)) {
+        CallStaticMethod(listenerClass, "setUnityApplicationState");
       }
     }
   }

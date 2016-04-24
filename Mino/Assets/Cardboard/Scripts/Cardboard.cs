@@ -18,51 +18,88 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// @ingroup Scripts
+/// This class is the main Cardboard SDK object.
+///
 /// The Cardboard object communicates with the head-mounted display in order to:
 /// -  Query the device for viewing parameters
 /// -  Retrieve the latest head tracking data
-/// -  Provide the rendered scene to the device for distortion correction
+/// -  Provide the rendered scene to the device for distortion correction (optional)
 ///
-/// There should only be one of these in a scene.  An instance will be generated
-/// at runtime if needed, or you can add one via the Editor if you wish to customize
+/// There should only be one of these in a scene.  An instance will be generated automatically
+/// by this script at runtime, or you can add one via the Editor if you wish to customize
 /// its starting properties.
+[AddComponentMenu("Cardboard/Cardboard")]
 public class Cardboard : MonoBehaviour {
+  // Cardboard SDK Version
+  public const string CARDBOARD_SDK_VERSION = "0.7";
+
   /// The singleton instance of the Cardboard class.
-  /// Not null: the instance is created on demand if not already present.
   public static Cardboard SDK {
     get {
-      if (sdk == null) {
+#if UNITY_EDITOR
+      if (sdk == null && !Application.isPlaying) {
         sdk = UnityEngine.Object.FindObjectOfType<Cardboard>();
       }
+#endif
       if (sdk == null) {
-        Debug.Log("Creating Cardboard object");
-        var go = new GameObject("Cardboard");
-        sdk = go.AddComponent<Cardboard>();
-        go.transform.localPosition = Vector3.zero;
+        Debug.LogError("No Cardboard instance found.  Ensure one exists in the scene, or call "
+            + "Cardboard.Create() at startup to generate one.\n"
+            + "If one does exist but hasn't called Awake() yet, "
+            + "then this error is due to order-of-initialization.\n"
+            + "In that case, consider moving "
+            + "your first reference to Cardboard.SDK to a later point in time.\n"
+            + "If exiting the scene, this indicates that the Cardboard object has already "
+            + "been destroyed.");
       }
       return sdk;
     }
   }
   private static Cardboard sdk = null;
 
-  /// Whether distortion correction is performed by the plugin.  If disabled, then it is
-  /// up to the app to perform whatever distortion correction it would like, if any.
-  public bool DistortionCorrection {
-    get {
-      return distortionCorrection;
-    }
-    set {
-      if (value != distortionCorrection && device != null) {
-        device.SetDistortionCorrectionEnabled(value && NativeDistortionCorrectionSupported);
-      }
-      distortionCorrection = value;
+  /// Generate a Cardboard instance.  Takes no action if one already exists.
+  public static void Create() {
+    if (sdk == null && UnityEngine.Object.FindObjectOfType<Cardboard>() == null) {
+      Debug.Log("Creating Cardboard object");
+      var go = new GameObject("Cardboard", typeof(Cardboard));
+      go.transform.localPosition = Vector3.zero;
+      // sdk will be set by Cardboard.Awake().
     }
   }
-  [SerializeField]
-  private bool distortionCorrection = true;
 
-  /// Determine whether the scene renders in stereo or mono.  Assign to this field
-  /// to control stereo/mono mode yourself.
+  /// The StereoController instance attached to the main camera, or null if there is none.
+  /// @note Cached for performance.
+  public static StereoController Controller {
+    get {
+      Camera camera = Camera.main;
+      // Cache for performance, if possible.
+      if (camera != currentMainCamera || currentController == null) {
+        currentMainCamera = camera;
+        currentController = camera.GetComponent<StereoController>();
+      }
+      return currentController;
+    }
+  }
+  private static Camera currentMainCamera;
+  private static StereoController currentController;
+
+  /// @cond
+  public bool UILayerEnabled {
+    get {
+      return uiLayerEnabled;
+    }
+    private set {
+      if (value != uiLayerEnabled && device != null) {
+        device.SetUILayerEnabled(value);
+      }
+      uiLayerEnabled = value;
+    }
+  }
+  // Not serialized.
+  private bool uiLayerEnabled = false;
+  /// @endcond
+
+  /// Determine whether the scene renders in stereo or mono.
+  /// _True_ means to render in stereo, and _false_ means to render in mono.
   public bool VRModeEnabled {
     get {
       return vrModeEnabled;
@@ -77,6 +114,35 @@ public class Cardboard : MonoBehaviour {
   [SerializeField]
   private bool vrModeEnabled = true;
 
+  /// Methods for performing lens distortion correction.
+  public enum DistortionCorrectionMethod {
+      None,    /// No distortion correction
+      Native,  /// Use the native C++ plugin
+      Unity,   /// Perform distortion correction in Unity (recommended)
+  }
+
+  /// Determines the distortion correction method used by the SDK to render the
+  /// #StereoScreen texture on the phone.  If _Native_ is selected but not supported
+  /// by the device, the _Unity_ method will be used instead.
+  public DistortionCorrectionMethod DistortionCorrection {
+    get {
+      return distortionCorrection;
+    }
+    set {
+      if (device != null && device.RequiresNativeDistortionCorrection()) {
+        value = DistortionCorrectionMethod.Native;
+      }
+      if (value != distortionCorrection && device != null) {
+        device.SetDistortionCorrectionEnabled(value == DistortionCorrectionMethod.Native
+            && NativeDistortionCorrectionSupported);
+        device.UpdateScreenData();
+      }
+      distortionCorrection = value;
+    }
+  }
+  [SerializeField]
+  private DistortionCorrectionMethod distortionCorrection = DistortionCorrectionMethod.Unity;
+
   /// Enables or disables the vertical line rendered between the stereo views to
   /// help the user align the Cardboard to the phone's screen.
   public bool EnableAlignmentMarker {
@@ -85,7 +151,7 @@ public class Cardboard : MonoBehaviour {
     }
     set {
       if (value != enableAlignmentMarker && device != null) {
-        device.SetAlignmentMarkerEnabled(value && NativeUILayerSupported);
+        device.SetAlignmentMarkerEnabled(value);
       }
       enableAlignmentMarker = value;
     }
@@ -111,20 +177,28 @@ public class Cardboard : MonoBehaviour {
   [SerializeField]
   private bool enableSettingsButton = true;
 
-  /// When enabled, Cardboard treats a screen tap the same as a trigger pull.
-  public bool TapIsTrigger {
+  /// Display modes for the VR "Back Button".
+  public enum BackButtonModes {
+    Off,       /// Always off
+    OnlyInVR,  /// On in VR Mode, otherwise off
+    On         /// Always on
+  }
+
+  /// Whether to show the onscreen analog of the (Android) Back Button.
+  public BackButtonModes BackButtonMode {
     get {
-      return tapIsTrigger;
+      return backButtonMode;
     }
     set {
-      if (value != tapIsTrigger && device != null) {
-        device.SetTapIsTrigger(value);
+      if (value != backButtonMode && device != null) {
+        device.SetVRBackButtonEnabled(value != BackButtonModes.Off);
+        device.SetShowVrBackButtonOnlyInVR(value == BackButtonModes.OnlyInVR);
       }
-      tapIsTrigger = value;
+      backButtonMode = value;
     }
   }
   [SerializeField]
-  private bool tapIsTrigger = true;
+  private BackButtonModes backButtonMode = BackButtonModes.OnlyInVR;
 
   /// The native SDK will apply a neck offset to the head tracking, resulting in
   /// a more realistic model of a person's head position.  This control determines
@@ -161,32 +235,34 @@ public class Cardboard : MonoBehaviour {
   [SerializeField]
   private bool autoDriftCorrection = true;
 
-#if UNITY_IOS
-  public bool SyncWithCardboardApp {
+  /// @cond
+  public bool ElectronicDisplayStabilization {
     get {
-      return syncWithCardboardApp;
+      return electronicDisplayStabilization;
     }
     set {
-      if (value && value != syncWithCardboardApp) {
-        Debug.LogWarning("Remember to enable iCloud capability in Xcode, "
-            + "and set the 'iCloud Documents' checkbox. "
-            + "Not doing this may cause the app to crash if the user tries to sync.");
+      if (value != electronicDisplayStabilization && device != null) {
+        device.SetElectronicDisplayStabilizationEnabled(value);
       }
-      syncWithCardboardApp = value;
+      electronicDisplayStabilization = value;
     }
   }
   [SerializeField]
-  private bool syncWithCardboardApp = false;
-#endif
+  private bool electronicDisplayStabilization = false;
+  /// @endcond
 
 #if UNITY_EDITOR
-  /// Mock settings for in-editor emulation of Cardboard while playing.
+  /// Restores level head tilt in when playing in the Unity Editor after you
+  /// release the Ctrl key.
   public bool autoUntiltHead = true;
 
+  /// @cond
   /// Use unity remote as the input source.
   [HideInInspector]
   public bool UseUnityRemoteInput = false;
+  /// @endcond
 
+  /// The screen size to emulate when testing in the Unity Editor.
   public CardboardProfile.ScreenSizes ScreenSize {
     get {
       return screenSize;
@@ -203,6 +279,7 @@ public class Cardboard : MonoBehaviour {
   [SerializeField]
   private CardboardProfile.ScreenSizes screenSize = CardboardProfile.ScreenSizes.Nexus5;
 
+  /// The device type to emulate when testing in the Unity Editor.
   public CardboardProfile.DeviceTypes DeviceType {
     get {
       return deviceType;
@@ -217,26 +294,49 @@ public class Cardboard : MonoBehaviour {
     }
   }
   [SerializeField]
-  public CardboardProfile.DeviceTypes deviceType = CardboardProfile.DeviceTypes.CardboardJun2014;
+  private CardboardProfile.DeviceTypes deviceType = CardboardProfile.DeviceTypes.CardboardMay2015;
 #endif
 
-  /// The VR device that will be providing input data.
+  // The VR device that will be providing input data.
   private static BaseVRDevice device;
 
+  /// Whether native distortion correction functionality is supported by the VR device.
   public bool NativeDistortionCorrectionSupported { get; private set; }
 
+  /// Whether the VR device supports showing a native UI layer, for example for settings.
   public bool NativeUILayerSupported { get; private set; }
 
-  /// The texture that Unity renders the scene to. This is sent to the VR device,
-  /// which renders it to screen, correcting for lens distortion.
+  /// Scales the resolution of the #StereoScreen.  Set to less than 1.0 to increase
+  /// rendering speed while decreasing sharpness, or greater than 1.0 to do the
+  /// opposite.
+  public float StereoScreenScale {
+    get {
+      return stereoScreenScale;
+    }
+    set {
+      value = Mathf.Clamp(value, 0.1f, 10.0f);  // Sanity.
+      if (stereoScreenScale != value) {
+        stereoScreenScale = value;
+        StereoScreen = null;
+      }
+    }
+  }
+  [SerializeField]
+  private float stereoScreenScale = 1;
+
+  /// The texture that Unity renders the scene to.  After the frame has been rendered,
+  /// this texture is drawn to the screen with a lens distortion correction effect.
+  /// The texture size is based on the size of the screen, the lens distortion
+  /// parameters, and the #StereoScreenScale factor.
   public RenderTexture StereoScreen {
     get {
       // Don't need it except for distortion correction.
-      if (!distortionCorrection || !vrModeEnabled) {
+      if (distortionCorrection == DistortionCorrectionMethod.None || !vrModeEnabled) {
         return null;
       }
-      if (stereoScreen == null && NativeDistortionCorrectionSupported) {
-        StereoScreen = CreateStereoScreen();  // Note: use set{}
+      if (stereoScreen == null) {
+        // Create on demand.
+        StereoScreen = device.CreateStereoScreen();  // Note: uses set{}
       }
       return stereoScreen;
     }
@@ -244,30 +344,22 @@ public class Cardboard : MonoBehaviour {
       if (value == stereoScreen) {
         return;
       }
-      if (!NativeDistortionCorrectionSupported && value != null) {
-        Debug.LogError("Can't set StereoScreen: native distortion correction is not supported.");
-        return;
-      }
       if (stereoScreen != null) {
         stereoScreen.Release();
       }
       stereoScreen = value;
-      if (stereoScreen != null && !stereoScreen.IsCreated()) {
-        stereoScreen.Create();
-      }
-      if (device != null) {
-        device.SetStereoScreen(stereoScreen);
+      if (OnStereoScreenChanged != null) {
+        OnStereoScreenChanged(stereoScreen);
       }
     }
   }
   private static RenderTexture stereoScreen = null;
 
-  public bool UseDistortionEffect {
-    get {
-      return !NativeDistortionCorrectionSupported && distortionCorrection && vrModeEnabled
-          && SystemInfo.supportsRenderTextures;
-    }
-  }
+  /// A callback for notifications that the StereoScreen property has changed.
+  public delegate void StereoScreenChangeDelegate(RenderTexture newStereoScreen);
+
+  /// Emitted when the StereoScreen property has changed.
+  public event StereoScreenChangeDelegate OnStereoScreenChanged;
 
   /// Describes the current device, including phone screen.
   public CardboardProfile Profile {
@@ -278,17 +370,17 @@ public class Cardboard : MonoBehaviour {
 
   /// Distinguish the stereo eyes.
   public enum Eye {
-    Left,
-    Right,
-    Center
+    Left,   /// The left eye
+    Right,  /// The right eye
+    Center  /// The "center" eye (unused)
   }
 
-  /// When retrieving the _Projection_ and _Viewport_ properties, specifies
+  /// When retrieving the #Projection and #Viewport properties, specifies
   /// whether you want the values as seen through the Cardboard lenses (`Distorted`) or
   /// as if no lenses were present (`Undistorted`).
   public enum Distortion {
-    Distorted,   // Viewing through the lenses
-    Undistorted  // No lenses
+    Distorted,   /// Viewing through the lenses
+    Undistorted  /// No lenses
   }
 
   /// The transformation of head from origin in the tracking system.
@@ -319,19 +411,25 @@ public class Cardboard : MonoBehaviour {
     return device.GetViewport(eye, distortion);
   }
 
-  /// The distance range from the viewer in user-space meters where objects
-  /// may be viewed comfortably in stereo.  If the center of interest falls
-  /// outside this range, the stereo eye separation should be adjusted to
-  /// keep the onscreen disparity within the limits set by this range.
+  /// The distance range from the viewer in user-space meters where objects may be viewed
+  /// comfortably in stereo.  If the center of interest falls outside this range, the stereo
+  /// eye separation should be adjusted to keep the onscreen disparity within the limits set
+  /// by this range.  StereoController will handle this if the _checkStereoComfort_ is
+  /// enabled.
   public Vector2 ComfortableViewingRange {
     get {
       return defaultComfortableViewingRange;
     }
   }
-  private readonly Vector2 defaultComfortableViewingRange = new Vector2(1.0f, 100000.0f);
+  private readonly Vector2 defaultComfortableViewingRange = new Vector2(0.4f, 100000.0f);
 
-  /// @hide
+  /// @cond
+  // Optional.  Set to a URI obtained from the Google Cardboard profile generator at
+  //   https://www.google.com/get/cardboard/viewerprofilegenerator/
+  // Example: Cardboard I/O 2015 viewer profile
+  //public Uri DefaultDeviceProfile = new Uri("http://google.com/cardboard/cfg?p=CgZHb29nbGUSEkNhcmRib2FyZCBJL08gMjAxNR0J-SA9JQHegj0qEAAAcEIAAHBCAABwQgAAcEJYADUpXA89OghX8as-YrENP1AAYAM");
   public Uri DefaultDeviceProfile = null;
+  /// @endcond
 
   private void InitDevice() {
     if (device != null) {
@@ -357,15 +455,17 @@ public class Cardboard : MonoBehaviour {
       device.SetDefaultDeviceProfile(DefaultDeviceProfile);
     }
 
-    device.SetVRModeEnabled(vrModeEnabled);
-    device.SetDistortionCorrectionEnabled(distortionCorrection
-        && NativeDistortionCorrectionSupported);
-    device.SetAlignmentMarkerEnabled(enableAlignmentMarker
-        && NativeUILayerSupported);
+    device.SetAlignmentMarkerEnabled(enableAlignmentMarker);
     device.SetSettingsButtonEnabled(enableSettingsButton);
-    device.SetTapIsTrigger(tapIsTrigger);
+    device.SetVRBackButtonEnabled(backButtonMode != BackButtonModes.Off);
+    device.SetShowVrBackButtonOnlyInVR(backButtonMode == BackButtonModes.OnlyInVR);
+    device.SetDistortionCorrectionEnabled(distortionCorrection == DistortionCorrectionMethod.Native
+        && NativeDistortionCorrectionSupported);
     device.SetNeckModelScale(neckModelScale);
     device.SetAutoDriftCorrectionEnabled(autoDriftCorrection);
+    device.SetElectronicDisplayStabilizationEnabled(electronicDisplayStabilization);
+
+    device.SetVRModeEnabled(vrModeEnabled);
 
     device.UpdateScreenData();
   }
@@ -379,8 +479,8 @@ public class Cardboard : MonoBehaviour {
       sdk = this;
     }
     if (sdk != this) {
-      Debug.LogWarning("Cardboard SDK object should be a singleton.");
-      enabled = false;
+      Debug.LogError("There must be only one Cardboard object in a scene.");
+      UnityEngine.Object.DestroyImmediate(this);
       return;
     }
 #if UNITY_IOS
@@ -389,105 +489,128 @@ public class Cardboard : MonoBehaviour {
     // Prevent the screen from dimming / sleeping
     Screen.sleepTimeout = SleepTimeout.NeverSleep;
     InitDevice();
-    AddDummyCamera();
     StereoScreen = null;
+    AddCardboardCamera();
   }
 
-  /// Emitted whenever a trigger pull occurs.  If #TapIsTrigger is set, then it is also
-  /// emitted when a screen tap occurs.
+  void Start() {
+    UILayerEnabled = true;
+  }
+
+  void AddCardboardCamera() {
+    var preRender = UnityEngine.Object.FindObjectOfType<CardboardPreRender>();
+    if (preRender == null) {
+      var go = new GameObject("PreRender", typeof(CardboardPreRender));
+      go.SendMessage("Reset");
+      go.transform.parent = transform;
+    }
+    var postRender = UnityEngine.Object.FindObjectOfType<CardboardPostRender>();
+    if (postRender == null) {
+      var go = new GameObject("PostRender", typeof(CardboardPostRender));
+      go.SendMessage("Reset");
+      go.transform.parent = transform;
+    }
+  }
+
+  /// Emitted whenever a trigger occurs.
   public event Action OnTrigger;
 
-  /// Emitted whenever the viewer is tilted on its side.  If #TapIsTrigger is set, the
-  /// Escape key issues this as well.
-  /// @note On Android, Unity sees the Back button as an Escape key.
+  /// Emitted whenever the viewer is tilted on its side.
   public event Action OnTilt;
+
+  /// Emitted whenever the app should respond to a possible change in the device viewer
+  /// profile, that is, the QR code scanned by the user.
+  public event Action OnProfileChange;
+
+  /// Emitted whenever the user presses the "VR Back Button".
+  public event Action OnBackButton;
 
   /// Whether the Cardboard trigger was pulled. True for exactly one complete frame
   /// after each pull.
   public bool Triggered { get; private set; }
 
   /// Whether the Cardboard viewer was tilted on its side. True for exactly one complete frame
-  /// after each tilt.  Some apps treat this as a "go back" or "exit scene" action.
+  /// after each tilt.  Whether and how to respond to this event is up to the app.
   public bool Tilted { get; private set; }
 
-  private bool updated = false;
+  /// Whether the Cardboard device profile has possibly changed.  This is meant to indicate
+  /// that a new QR code has been scanned, although currently it is actually set any time the
+  /// application is unpaused, whether it was due to a profile change or not.  True for one
+  /// frame.
+  public bool ProfileChanged { get; private set; }
 
-  private CardboardUILayer uiLayer = null;
+  /// Whether the user has pressed the "VR Back Button", which on Android should be treated the
+  /// same as the normal system Back Button, although you can respond to either however you want
+  /// in your app.
+  public bool BackButtonPressed { get; private set; }
+
+  // Only call device.UpdateState() once per frame.
+  private int updatedToFrame = 0;
 
   /// Reads the latest tracking data from the phone.  This must be
-  /// Called before accessing any of the poses and matrices above.
+  /// called before accessing any of the poses and matrices above.
   ///
   /// Multiple invocations per frame are OK:  Subsequent calls merely yield the
   /// cached results of the first call.  To minimize latency, it should be first
   /// called later in the frame (for example, in `LateUpdate`) if possible.
   public void UpdateState() {
-    if (!updated) {
+    if (updatedToFrame != Time.frameCount) {
+      updatedToFrame = Time.frameCount;
       device.UpdateState();
-      updated = true;
+
+      if (device.profileChanged) {
+        if (distortionCorrection != DistortionCorrectionMethod.Native
+            && device.RequiresNativeDistortionCorrection()) {
+          DistortionCorrection = DistortionCorrectionMethod.Native;
+        }
+        if (stereoScreen != null
+            && device.ShouldRecreateStereoScreen(stereoScreen.width, stereoScreen.height)) {
+          StereoScreen = null;
+        }
+      }
+
+      DispatchEvents();
     }
   }
 
   private void DispatchEvents() {
-    Triggered = device.triggered || TapIsTrigger && Input.GetMouseButtonDown(0);
-    Tilted = device.tilted || TapIsTrigger && Input.GetKeyDown(KeyCode.Escape);
+    // Update flags first by copying from device and other inputs.
+    Triggered = device.triggered || Input.GetMouseButtonDown(0);
+    Tilted = device.tilted;
+    ProfileChanged = device.profileChanged;
+    BackButtonPressed = device.backButtonPressed || Input.GetKeyDown(KeyCode.Escape);
+    // Reset device flags.
     device.triggered = false;
     device.tilted = false;
-
-    if (Tilted) {
-      if (OnTilt != null) {
-        OnTilt();
-      }
+    device.profileChanged = false;
+    device.backButtonPressed = false;
+    // All flags updated.  Now emit events.
+    if (Tilted && OnTilt != null) {
+      OnTilt();
     }
-    if (Triggered) {
-      if (OnTrigger != null) {
-        OnTrigger();
-      }
+    if (Triggered && OnTrigger != null) {
+      OnTrigger();
     }
-  }
-
-  private void AddDummyCamera() {
-    var go = gameObject;
-    if (go.GetComponent<Camera>()) {
-      go = new GameObject("CardboardDummy");
-      go.transform.parent = gameObject.transform;
+    if (ProfileChanged && OnProfileChange != null) {
+      OnProfileChange();
     }
-    var cam = go.AddComponent<Camera>();
-    cam.clearFlags = CameraClearFlags.SolidColor;
-    cam.backgroundColor = Color.black;
-    cam.cullingMask = 0;
-    cam.useOcclusionCulling = false;
-    cam.depth = -100;
-  }
-
-  IEnumerator EndOfFrame() {
-    while (true) {
-      yield return new WaitForEndOfFrame();
-      UpdateState();
-      device.PostRender(vrModeEnabled);
-      if (vrModeEnabled && !NativeUILayerSupported) {
-        if (uiLayer == null) {
-          uiLayer = new CardboardUILayer();
-        }
-        uiLayer.Draw();
-      }
-      DispatchEvents();
-      updated = false;
+    if (BackButtonPressed && OnBackButton != null) {
+      OnBackButton();
     }
   }
 
-  /// Return a StereoScreen with sensible default values.
-  public RenderTexture CreateStereoScreen() {
-    return device.CreateStereoScreen();
+  /// Presents the #StereoScreen to the device for distortion correction and display.
+  /// @note This function is only used if #DistortionCorrection is set to _Native_,
+  /// and it only has an effect if the device supports it.
+  public void PostRender(RenderTexture stereoScreen) {
+    if (NativeDistortionCorrectionSupported && stereoScreen != null && stereoScreen.IsCreated()) {
+      device.PostRender(stereoScreen);
+    }
   }
 
-  /// Reset the tracker so that the user's current direction becomes forward.
+  /// Resets the tracker so that the user's current direction becomes forward.
   public void Recenter() {
     device.Recenter();
-  }
-
-  /// Set the screen coordinates of the mouse/touch event.
-  public void SetTouchCoordinates(int x, int y) {
-    device.SetTouchCoordinates(x, y);
   }
 
   /// Launch the device pairing and setup dialog.
@@ -496,12 +619,16 @@ public class Cardboard : MonoBehaviour {
   }
 
   void OnEnable() {
+#if UNITY_EDITOR
+    // This can happen if you edit code while the editor is in Play mode.
+    if (device == null) {
+      InitDevice();
+    }
+#endif
     device.OnPause(false);
-    StartCoroutine("EndOfFrame");
   }
 
   void OnDisable() {
-    StopCoroutine("EndOfFrame");
     device.OnPause(true);
   }
 
@@ -514,11 +641,16 @@ public class Cardboard : MonoBehaviour {
   }
 
   void OnLevelWasLoaded(int level) {
-    device.Reset();
+    device.OnLevelLoaded(level);
+  }
+
+  void OnApplicationQuit() {
+    device.OnApplicationQuit();
   }
 
   void OnDestroy() {
     VRModeEnabled = false;
+    UILayerEnabled = false;
     if (device != null) {
       device.Destroy();
     }
@@ -526,69 +658,4 @@ public class Cardboard : MonoBehaviour {
       sdk = null;
     }
   }
-
-  void OnApplicationQuit() {
-    device.OnApplicationQuit();
-  }
-
-  //********* OBSOLETE ACCESSORS *********
-
-  /// @deprecated Use #DistortionCorrection instead.
-  [System.Obsolete("Use DistortionCorrection instead.")]
-  public bool nativeDistortionCorrection {
-    get { return DistortionCorrection; }
-    set { DistortionCorrection = value; }
-  }
-
-  /// @deprecated
-  [System.Obsolete("InCardboard is deprecated.")]
-  public bool InCardboard { get { return true; } }
-
-  /// @deprecated Use #Triggered instead.
-  [System.Obsolete("Use Triggered instead.")]
-  public bool CardboardTriggered { get { return Triggered; } }
-
-  /// @deprecated Use #HeadPose instead.
-  [System.Obsolete("Use HeadPose instead.")]
-  public Matrix4x4 HeadView { get { return HeadPose.Matrix; } }
-
-  /// @deprecated Use #HeadPose instead.
-  [System.Obsolete("Use HeadPose instead.")]
-  public Quaternion HeadRotation { get { return HeadPose.Orientation; } }
-
-  /// @deprecated Use #HeadPose instead.
-  [System.Obsolete("Use HeadPose instead.")]
-  public Vector3 HeadPosition { get { return HeadPose.Position; } }
-
-  /// @deprecated Use #EyePose instead.
-  [System.Obsolete("Use EyePose() instead.")]
-  public Matrix4x4 EyeView(Eye eye) {
-    return EyePose(eye).Matrix;
-  }
-
-  /// @deprecated Use #EyePose instead.
-  [System.Obsolete("Use EyePose() instead.")]
-  public Vector3 EyeOffset(Eye eye) {
-    return EyePose(eye).Position;
-  }
-
-  /// @deprecated Use #Projection instead.
-  [System.Obsolete("Use Projection() instead.")]
-  public Matrix4x4 UndistortedProjection(Eye eye) {
-    return Projection(eye, Distortion.Undistorted);
-  }
-
-  /// @deprecated Use #Viewport instead.
-  [System.Obsolete("Use Viewport() instead.")]
-  public Rect EyeRect(Eye eye) {
-    return Viewport(eye, Distortion.Distorted);
-  }
-
-  /// @deprecated Use #ComfortableViewingRange instead.
-  [System.Obsolete("Use ComfortableViewingRange instead.")]
-  public float MinimumComfortDistance { get { return ComfortableViewingRange.x; } }
-
-  /// @deprecated Use #ComfortableViewingRange instead.
-  [System.Obsolete("Use ComfortableViewingRange instead.")]
-  public float MaximumComfortDistance { get { return ComfortableViewingRange.y; } }
 }

@@ -57,7 +57,7 @@ public class RadialUndistortionEffect : MonoBehaviour {
   void OnRenderImage(RenderTexture source, RenderTexture dest) {
     // Check if we found our shader, and that native distortion correction is OFF (except maybe in
     // the editor, since native is not available here).
-    bool disabled = material == null || !Cardboard.SDK.UseDistortionEffect;
+		bool disabled = material == null; //||!Cardboard.SDK.UseDistortionEffect;
 #if UNITY_EDITOR
     bool mainCamera = controller != null && controller.GetComponent<Camera>().tag == "MainCamera";
     disabled |= !mainCamera;
